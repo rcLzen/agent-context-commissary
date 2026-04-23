@@ -24,6 +24,7 @@ export {
 export {
   type SurfacedDiscovery,
   surfaceRelevantDiscoveries,
+  surfaceRelevantDiscoveriesWithCli,
   formatForAgent,
   buildQueryFromTask,
   isRelevant,
@@ -35,3 +36,14 @@ export {
   quickTemplate,
   taskWarrantsDiscovery,
 } from './artifacts/write-trigger.js';
+
+export {
+  DEFAULT_GBRAIN_PATH,
+  GBrainCliError,
+  type GBrainQueryOptions,
+  type GBrainStoreOptions,
+  queryDiscoveriesViaCli,
+  putArtifactViaCli,
+  putMarkdownViaCli,
+  runGbrainCommand,
+} from './gbrain-cli.js';

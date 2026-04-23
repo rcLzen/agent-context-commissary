@@ -6,6 +6,7 @@
  */
 
 import type { DiscoveryArtifact } from './format.js';
+import { queryDiscoveriesViaCli } from '../gbrain-cli.js';
 
 export interface SurfacedDiscovery {
   slug: string;
@@ -15,10 +16,10 @@ export interface SurfacedDiscovery {
 }
 
 /**
- * Query GBrain for relevant prior discoveries based on task description
+ * Query GBrain for relevant prior discoveries based on task description.
  *
  * This function is designed to be called by an orchestrator before starting a new task.
- * It uses gbrain__query with expand=true to find relevant past discoveries.
+ * It preserves the original injected-query path for runtime integrations.
  *
  * @param taskDescription - Description of the upcoming task
  * @param gbrainQueryFn - The gbrain__query function (passed in to avoid circular dependency)
@@ -47,6 +48,20 @@ export async function surfaceRelevantDiscoveries(
     snippet: result.content?.slice(0, 300) || result.snippet || '',
     relevanceScore: result.score,
   }));
+}
+
+/**
+ * Query GBrain using the local CLI binary instead of an injected runtime tool.
+ */
+export async function surfaceRelevantDiscoveriesWithCli(
+  taskDescription: string,
+  options: { gbrainPath?: string; limit?: number } = {}
+): Promise<SurfacedDiscovery[]> {
+  return queryDiscoveriesViaCli(taskDescription, {
+    gbrainPath: options.gbrainPath,
+    limit: options.limit,
+    expand: true,
+  });
 }
 
 /**
