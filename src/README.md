@@ -5,7 +5,9 @@
 ```
 src/
 ├── index.ts              # Main exports
-├── example.ts            # Usage examples
+├── cli.ts                # Operational CLI entrypoint
+├── example.ts            # Real-path usage examples
+├── gbrain-cli.ts         # Thin wrapper around the gbrain binary
 └── artifacts/
     ├── format.ts         # Artifact format utilities
     ├── storage.ts        # GBrain storage integration
@@ -19,22 +21,25 @@ src/
 ### `artifacts/format.ts`
 Defines the discovery artifact structure with YAML frontmatter + markdown body pattern.
 
+### `gbrain-cli.ts`
+Runs the real `gbrain` binary for query and storage operations.
+
 ### `artifacts/storage.ts`
-GBrain storage utilities using `gbrain__put_page` for persistence.
+GBrain storage utilities backed by the CLI wrapper.
 
 ### `artifacts/surfacing.ts`
-Query hook that surfaces relevant past discoveries before new tasks using `gbrain__query`.
+Query hook that surfaces relevant past discoveries before new tasks. Supports injected runtime queries and the local CLI path.
 
 ### `artifacts/write-trigger.ts`
 Post-task prompt/checklist template for agents to capture discoveries.
 
 ## Integration
 
-The commissary integrates with OpenClaw's GBrain system:
+The commissary integrates with GBrain in two ways:
 
-1. **Before task**: Call `surfaceRelevantDiscoveries()` to query GBrain for relevant prior discoveries
-2. **After task**: Call `generateWritePrompt()` to prompt discovery capture, then use `prepareForStorage()` to format for GBrain
-3. **Storage**: The orchestrator calls `gbrain__put_page` with the prepared content
+1. **Before task**: Run `commissary pretask` or call `surfaceRelevantDiscoveriesWithCli()`
+2. **After task**: Run `commissary posttask` to generate an artifact
+3. **Storage**: Pass `--store` on `posttask`, call `storeDiscovery()`, or run `commissary store`
 
 ## Artifact Format
 

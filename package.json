@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "description": "Internal knowledge layer for agent teams. Captures hard-won discoveries so agents do not repeat the same failures.",
   "main": "src/index.ts",
+  "bin": {
+    "commissary": "./dist/cli.js"
+  },
   "type": "module",
   "scripts": {
     "build": "tsc",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "example": "npx tsx src/example.ts"
+    "example": "npx tsx src/example.ts",
+    "commissary": "npx tsx src/cli.ts"
   },
   "keywords": [
     "agent",

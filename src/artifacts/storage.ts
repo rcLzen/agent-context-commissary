@@ -1,10 +1,11 @@
 /**
- * GBrain storage integration for the Agent Context Commissary
+ * GBrain storage integration for the Agent Context Commissary.
  *
- * Uses OpenClaw's GBrain (gbrain__put_page) to persist discovery artifacts.
+ * Persists discovery artifacts through the local gbrain CLI wrapper.
  */
 
 import { formatArtifactAsMarkdown, generateSlug } from './format.js';
+import { putArtifactViaCli } from '../gbrain-cli.js';
 
 export interface StorageResult {
   success: boolean;
@@ -12,18 +13,23 @@ export interface StorageResult {
   error?: string;
 }
 
+export interface StoreDiscoveryOptions {
+  gbrainPath?: string;
+}
+
 /**
  * Store a discovery artifact in GBrain
  */
-export async function storeDiscovery(artifact: Partial<import('./format.js').DiscoveryArtifact>): Promise<StorageResult> {
+export async function storeDiscovery(
+  artifact: Partial<import('./format.js').DiscoveryArtifact>,
+  options: StoreDiscoveryOptions = {}
+): Promise<StorageResult> {
   try {
-    const content = formatArtifactAsMarkdown(artifact);
+    await putArtifactViaCli(artifact, options);
 
-    // Use the gbrain__put_page tool to store
-    // The tool call will be made by the orchestrator/agent that imports this module
     return {
       success: true,
-      slug: artifact.slug || '',
+      slug: artifact.slug || generateDefaultSlug(),
     };
   } catch (error) {
     return {

@@ -1,65 +1,45 @@
 /**
  * Example usage of the Agent Context Commissary
  *
- * This file demonstrates how to integrate the commissary into agent workflows.
+ * This file demonstrates the real operational flow using the local gbrain CLI.
  */
 
 import {
-  // Format and parse discovery artifacts
+  DEFAULT_GBRAIN_PATH,
   formatArtifactAsMarkdown,
   parseFrontmatter,
-  generateSlug,
-  type DiscoveryArtifact,
-  // Storage utilities
-  prepareForStorage,
-  validateArtifact,
-  // Surfacing hook
-  surfaceRelevantDiscoveries,
-  formatForAgent,
-  // Write trigger
-  generateWritePrompt,
-  quickTemplate,
-  taskWarrantsDiscovery,
+  queryDiscoveriesViaCli,
+  putArtifactViaCli,
 } from './index.js';
 
-// ============================================================
-// EXAMPLE 1: Surfacing relevant discoveries before a task
-// ============================================================
-
-async function exampleSurfacing() {
+async function examplePretask(): Promise<void> {
   const taskDescription = 'Implement user authentication with OAuth2';
+  console.log(`Using gbrain binary: ${DEFAULT_GBRAIN_PATH}`);
 
-  // This would be called by the orchestrator before starting the task
-  // In real usage, gbrain__query would be injected from the OpenClaw runtime
-  const mockGbrainQuery = async (params: { query: string; expand?: boolean; limit?: number }) => {
-    console.log('Querying GBrain with:', params);
-    return [
-      {
-        slug: 'oauth-scope-order-matters-20260410',
-        title: 'OAuth2 scope order affects token validation',
-        content: 'When requesting OAuth2 tokens, the scope order in the request must match...',
-        score: 0.92,
-      },
-    ];
-  };
+  try {
+    const discoveries = await queryDiscoveriesViaCli(taskDescription, {
+      gbrainPath: DEFAULT_GBRAIN_PATH,
+      limit: 3,
+    });
 
-  const discoveries = await surfaceRelevantDiscoveries(taskDescription, mockGbrainQuery, 3);
+    console.log('\n=== Pretask Discoveries ===');
+    if (discoveries.length === 0) {
+      console.log('No prior discoveries found.');
+      return;
+    }
 
-  if (discoveries.length > 0) {
-    console.log('\n=== Prior Discoveries ===');
-    console.log(formatForAgent(discoveries));
-  } else {
-    console.log('No prior discoveries found.');
+    for (const discovery of discoveries) {
+      console.log(`- ${discovery.title} (${discovery.slug})`);
+    }
+  } catch (error) {
+    console.log('\n=== Pretask Discoveries ===');
+    console.log(`GBrain query failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
-// ============================================================
-// EXAMPLE 2: Writing a discovery after task completion
-// ============================================================
-
-function exampleWriteDiscovery() {
-  const artifact: Partial<DiscoveryArtifact> = {
-    slug: generateSlug('Implement user authentication with OAuth2'),
+async function examplePosttask(store: boolean): Promise<void> {
+  const artifact = {
+    slug: 'oauth2-scope-order-affects-token-validation-20260423',
     title: 'OAuth2 scope order affects token validation',
     date: new Date().toISOString().slice(0, 10),
     tags: ['oauth2', 'authentication', 'security'],
@@ -73,60 +53,21 @@ function exampleWriteDiscovery() {
     taskContext: 'Implement user authentication with OAuth2',
   };
 
-  const errors = validateArtifact(artifact);
-  if (errors.length > 0) {
-    console.error('Validation errors:', errors);
+  const markdown = formatArtifactAsMarkdown(artifact);
+  console.log('\n=== Posttask Artifact ===');
+  console.log(markdown);
+
+  if (!store) {
     return;
   }
 
-  const markdown = formatArtifactAsMarkdown(artifact);
-  console.log('\n=== Formatted Discovery Artifact ===');
-  console.log(markdown);
-
-  // Prepare for GBrain storage
-  const { slug, content } = prepareForStorage(artifact);
-  console.log('\n=== Ready for GBrain ===');
-  console.log('Slug:', slug);
-  console.log('Content length:', content.length, 'chars');
+  try {
+    const stored = await putArtifactViaCli(artifact, { gbrainPath: DEFAULT_GBRAIN_PATH });
+    console.log(`Stored in GBrain as ${stored.slug}`);
+  } catch (error) {
+    console.log(`GBrain store failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
-
-// ============================================================
-// EXAMPLE 3: Generating a post-task write prompt
-// ============================================================
-
-function exampleWriteTrigger() {
-  const prompt = generateWritePrompt({
-    taskDescription: 'Build a custom React hook for data fetching',
-    outcome: 'success',
-    agentNotes: 'Used SWR as the underlying library. Would consider alternatives for simpler use cases.',
-    timeSpent: '2 hours',
-  });
-
-  console.log('\n=== Post-Task Write Prompt ===');
-  console.log(prompt);
-
-  // Check if a simpler task warrants discovery
-  const simpleTask = 'Fix a typo in the README';
-  const complexTask = 'Debug a race condition in the worker queue';
-
-  console.log('\nTask warrants discovery?');
-  console.log(`  "${simpleTask}": ${taskWarrantsDiscovery(simpleTask)}`);
-  console.log(`  "${complexTask}": ${taskWarrantsDiscovery(complexTask)}`);
-}
-
-// ============================================================
-// EXAMPLE 4: Quick template for rapid capture
-// ============================================================
-
-function exampleQuickTemplate() {
-  const template = quickTemplate('Investigate memory leak in background worker');
-  console.log('\n=== Quick Template ===');
-  console.log(template);
-}
-
-// ============================================================
-// EXAMPLE 5: Parsing an existing artifact from GBrain
-// ============================================================
 
 function exampleParsing() {
   const existingContent = `---
@@ -169,13 +110,11 @@ Debug slow API responses under production load
 
 // Run examples
 async function main() {
-  console.log('Agent Context Commissary - Example Usage\n');
+  console.log('Agent Context Commissary - Operational Example\n');
   console.log('='.repeat(50));
 
-  await exampleSurfacing();
-  exampleWriteDiscovery();
-  exampleWriteTrigger();
-  exampleQuickTemplate();
+  await examplePretask();
+  await examplePosttask(false);
   exampleParsing();
 }
 
