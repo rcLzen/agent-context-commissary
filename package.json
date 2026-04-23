@@ -1,0 +1,25 @@
+{
+  "name": "agent-context-commissary",
+  "version": "1.0.0",
+  "description": "Internal knowledge layer for agent teams. Captures hard-won discoveries so agents do not repeat the same failures.",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "example": "npx tsx src/example.ts"
+  },
+  "keywords": [
+    "agent",
+    "knowledge",
+    "context",
+    "discoveries"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}
